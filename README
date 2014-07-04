@@ -1,12 +1,13 @@
 Running
 =======
 
-You can run your starter application with:
+Run the application with:
 
-  python sample.py
+  python scout.py
 
-Please read sample.py carefully, it contains detailed information
-in the comments.
+Right now it is set to scout your "primary" calendar for upcoming events.  This
+is typically the calendar whose name is your email address.
+
 
 Installation
 ============
