@@ -1,0 +1,9 @@
+# Application auth to Google API #
+##################################
+client_secrets.json
+sample.dat
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
