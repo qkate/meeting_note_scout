@@ -2,19 +2,19 @@
 #
 # Copyright (C) 2013 Google Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Command-line skeleton application for Calendar API.
+'''Command-line skeleton application for Calendar API.
 Usage:
   $ python sample.py
 
@@ -23,7 +23,7 @@ by running:
 
   $ python sample.py --help
 
-"""
+'''
 
 import argparse
 import httplib2
@@ -34,6 +34,7 @@ from apiclient import discovery
 from oauth2client import file
 from oauth2client import client
 from oauth2client import tools
+from datetime import datetime, timedelta
 
 # Parser for command-line arguments.
 parser = argparse.ArgumentParser(
@@ -84,17 +85,62 @@ def main(argv):
         # TODO: need to do the following
         # - look up calendar events in upcoming week
         # - create notes in Evernote for each of those meetings
+        # - ^^ make sure aren't creating dups!
+        # - ^^ call them '[UNFINISHED] meeting notes yey' initially
         # - put reminders for the day before meeting on all Enotes
         # - put links to the Enote file in the calendar description
+        # - write bit in README about how I use it: finish notes then reset
+        #    reminder for the day OF the meeting
+
+        # Find user's primary calendar
         calendarlist = service.calendarList().list().execute()
-        calendars = calendarlist["items"]
+        calendars = calendarlist['items']
         for c in calendars:
-            print c["summary"]
-            print "primary" in c.keys()
+            if 'primary' in c.keys():
+                primary_cal = c
+                break
+        primary_cal_id = primary_cal['id']
+
+        # Get all events upcoming in the next week
+        # TODO: need to fail gracefully on events without 'dateTime' under 'start'
+        now = datetime.now()
+        # TODO: need to convert this to primary calendar's default timezone
+        right_now = datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')+'-08:00'
+        week_from_now = datetime.strftime(now + timedelta(days=+7), '%Y-%m-%dT%H:%M:%S')+'-08:00'
+        events_in_next_week = service.events().list(calendarId=primary_cal_id, timeMin=right_now, timeMax=week_from_now).execute()
+        events_in_next_week = events_in_next_week['items']
+        # Clean events for cancellation ghosts
+
+        print len(events_in_next_week)
+
+        for e in events_in_next_week:
+            if 'summary' not in e:
+                events_in_next_week.remove(e)
+
+        print len(events_in_next_week)
+
+        # Expand all recurrence "events" to actual instance events
+        for e in events_in_next_week:
+            if 'recurrence' in e.keys():
+                events_in_next_week.remove(e)
+                instances = service.events().instances(calendarId=primary_cal_id, eventId=e['id'], timeMin=right_now, timeMax=week_from_now).execute()
+                instances = instances['items']
+
+                for i in instances:
+                    print ''
+                    print i['id']
+                    print i['etag']
+                    print i['start']
+                    print i['end']
+                    print ''
+
+            if 'recurringEventId' in e.keys():
+                print 'recurringEventId: ', e['recurringEventId']
+
 
     except client.AccessTokenRefreshError:
-        print ("The credentials have been revoked or expired, please re-run"
-            "the application to re-authorize")
+        print ('The credentials have been revoked or expired, please re-run'
+          'the application to re-authorize')
 
 
 # For more information on the Calendar API you can visit:
