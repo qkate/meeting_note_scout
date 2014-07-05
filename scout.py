@@ -107,8 +107,13 @@ def main(argv):
         # TODO: need to convert this to primary calendar's default timezone
         right_now = datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')+'-08:00'
         week_from_now = datetime.strftime(now + timedelta(days=+7), '%Y-%m-%dT%H:%M:%S')+'-08:00'
-        events_in_next_week = service.events().list(calendarId=primary_cal_id, timeMin=right_now, timeMax=week_from_now).execute()
+        events_in_next_week = service.events().list(calendarId=primary_cal_id, timeMin=right_now, timeMax=week_from_now,
+          singleEvents=True, orderBy='startTime', showDeleted=False).execute()
         events_in_next_week = events_in_next_week['items']
+
+        print 'howdy'
+        print len(events_in_next_week)
+        print 'ok'
 
         # Clean events for cancellation ghosts
         for e in events_in_next_week:
@@ -131,12 +136,14 @@ def main(argv):
         events_in_next_week.extend(events_to_add)
 
         # Expanding recurrences can create dups, so let's clear those
-        unique_events = []
+        unique_events_ids = []
         for e in events_in_next_week:
-            unique_events.append(e['id'])
-        unique_events = list(set(unique_events))
+            unique_events_ids.append(e['id'])
+        unique_events_ids = list(set(unique_events_ids))
 
-        print len(unique_events)
+        print len(events_in_next_week)
+        print events_in_next_week[1]
+        print len(unique_events_ids)
 
 
     except client.AccessTokenRefreshError:
