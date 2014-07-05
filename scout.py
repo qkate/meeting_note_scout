@@ -111,39 +111,16 @@ def main(argv):
           singleEvents=True, orderBy='startTime', showDeleted=False).execute()
         events_in_next_week = events_in_next_week['items']
 
-        print 'howdy'
         print len(events_in_next_week)
-        print 'ok'
-
-        # Clean events for cancellation ghosts
-        for e in events_in_next_week:
-            if 'summary' not in e:
-                events_in_next_week.remove(e)
-
-        # Expand all recurrence "events" to actual instance events instead
-        events_to_remove = []
-        events_to_add = []
 
         for e in events_in_next_week:
-            if 'recurrence' in e.keys():
-                instances = service.events().instances(calendarId=primary_cal_id, eventId=e['id'], timeMin=right_now, timeMax=week_from_now).execute()
-                instances = instances['items']
-                events_to_remove.append(e)
-                events_to_add.extend(instances)
-
-        [events_in_next_week.remove(e) for e in events_to_remove]
-
-        events_in_next_week.extend(events_to_add)
-
-        # Expanding recurrences can create dups, so let's clear those
-        unique_events_ids = []
-        for e in events_in_next_week:
-            unique_events_ids.append(e['id'])
-        unique_events_ids = list(set(unique_events_ids))
-
-        print len(events_in_next_week)
-        print events_in_next_week[1]
-        print len(unique_events_ids)
+            print '================'
+            print e['summary']
+            print '================'
+            for k in e.keys():
+                if k != 'description' and k != 'attendees':
+                    print k, ':', e[k]
+            print ''
 
 
     except client.AccessTokenRefreshError:
