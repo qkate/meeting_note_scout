@@ -109,33 +109,34 @@ def main(argv):
         week_from_now = datetime.strftime(now + timedelta(days=+7), '%Y-%m-%dT%H:%M:%S')+'-08:00'
         events_in_next_week = service.events().list(calendarId=primary_cal_id, timeMin=right_now, timeMax=week_from_now).execute()
         events_in_next_week = events_in_next_week['items']
+
         # Clean events for cancellation ghosts
-
-        print len(events_in_next_week)
-
         for e in events_in_next_week:
             if 'summary' not in e:
                 events_in_next_week.remove(e)
 
-        print len(events_in_next_week)
+        # Expand all recurrence "events" to actual instance events instead
+        events_to_remove = []
+        events_to_add = []
 
-        # Expand all recurrence "events" to actual instance events
         for e in events_in_next_week:
             if 'recurrence' in e.keys():
-                events_in_next_week.remove(e)
                 instances = service.events().instances(calendarId=primary_cal_id, eventId=e['id'], timeMin=right_now, timeMax=week_from_now).execute()
                 instances = instances['items']
+                events_to_remove.append(e)
+                events_to_add.extend(instances)
 
-                for i in instances:
-                    print ''
-                    print i['id']
-                    print i['etag']
-                    print i['start']
-                    print i['end']
-                    print ''
+        [events_in_next_week.remove(e) for e in events_to_remove]
 
-            if 'recurringEventId' in e.keys():
-                print 'recurringEventId: ', e['recurringEventId']
+        events_in_next_week.extend(events_to_add)
+
+        # Expanding recurrences can create dups, so let's clear those
+        unique_events = []
+        for e in events_in_next_week:
+            unique_events.append(e['id'])
+        unique_events = list(set(unique_events))
+
+        print len(unique_events)
 
 
     except client.AccessTokenRefreshError:
